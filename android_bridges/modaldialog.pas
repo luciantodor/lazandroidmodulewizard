@@ -14,6 +14,13 @@ TDialogTheme = (thHoloLightDialog, thHoloDialog, thDialog);
 {Draft Component code by "Lazarus Android Module Wizard" [5/16/2017 0:28:03]}
 {https://github.com/jmpessoa/lazandroidmodulewizard}
 
+type
+    TRequestInfo = Record
+      Hint: string;
+      InputType: TInputTypeEx;
+	 end;
+    TRequestInfoList = array of TRequestInfo;
+
 {jControl template}
 
 jModalDialog = class(jControl)
@@ -23,6 +30,8 @@ jModalDialog = class(jControl)
     FCaptionCancel: string;
     FTitle: string;
     FTitleFontSize: integer;
+    FRequestInfoList: TRequestInfoList;
+
  public
     constructor Create(AOwner: TComponent); override;
     destructor  Destroy; override;
@@ -33,7 +42,7 @@ jModalDialog = class(jControl)
     procedure SetRequestCode(_requestCode: integer);
     procedure SetDialogTitle(_dialogTitle: string);
     procedure ShowMessage(_packageName: string);
-    procedure InputForActivityResult(_packageName: string; var _requestInfo: TDynArrayOfString);
+    procedure InputForActivityResult(_packageName: string);
     procedure QuestionForActivityResult(_packageName: string);
 
     function GetStringValue(_intentData: jObject; _fieldName: string): string;
@@ -46,6 +55,9 @@ jModalDialog = class(jControl)
     procedure SetCaptionButtonCancel(_captionBtnCancel: string);
     procedure SetTitleFontSize(_fontSize: integer);
     procedure SetInputHint(_hint: string);
+
+    procedure ClearRequestInfo();
+    procedure AddRequestInfo(Hint: string; InputType: TInputTypeEx);
 
  published
     property Theme: TDialogTheme read  FTheme write SetTheme;
@@ -62,7 +74,7 @@ procedure jModalDialog_SetRequestCode(env: PJNIEnv; _jmodaldialog: JObject; _req
 procedure jModalDialog_SetDialogTitle(env: PJNIEnv; _jmodaldialog: JObject; _dialogTitle: string);
 procedure jModalDialog_ShowMessage(env: PJNIEnv; _jmodaldialog: JObject; _packageName: string);
 procedure jModalDialog_QuestionForActivityResult(env: PJNIEnv; _jmodaldialog: JObject; _packageName: string);
-procedure jModalDialog_InputForActivityResult(env: PJNIEnv; _jmodaldialog: JObject; _packageName: string; var _requestInfo: TDynArrayOfString);
+procedure jModalDialog_InputForActivityResult(env: PJNIEnv; _jmodaldialog: JObject; _packageName: string; var _requestInfo: TRequestInfoList);
 function jModalDialog_GetStringValue(env: PJNIEnv; _jmodaldialog: JObject; _intentData: jObject; _fieldName: string): string;
 function jModalDialog_GetIntValue(env: PJNIEnv; _jmodaldialog: JObject; _intentData: jObject; _fieldName: string): integer;
 procedure jModalDialog_SetTheme(env: PJNIEnv; _jmodaldialog: JObject; _dialogTheme: integer);
@@ -98,6 +110,7 @@ begin
      begin
        jFree();
        FjObject:= nil;
+       SetLength(FRequestInfoList, 0);
      end;
   end;
   //you others free code here...'
@@ -169,11 +182,11 @@ begin
      jModalDialog_QuestionForActivityResult(FjEnv, FjObject, _packageName);
 end;
 
-procedure jModalDialog.InputForActivityResult(_packageName: string; var _requestInfo: TDynArrayOfString);
+procedure jModalDialog.InputForActivityResult(_packageName: string);
 begin
   //in designing component state: set value here...
   if FInitialized then
-     jModalDialog_InputForActivityResult(FjEnv, FjObject, _packageName ,_requestInfo);
+     jModalDialog_InputForActivityResult(FjEnv, FjObject, _packageName, FRequestInfoList);
 end;
 
 function jModalDialog.GetStringValue(_intentData: jObject; _fieldName: string): string;
@@ -234,6 +247,21 @@ begin
   //in designing component state: set value here...
   if FInitialized then
      jModalDialog_SetInputHint(FjEnv, FjObject, _hint);
+end;
+
+procedure jModalDialog.ClearRequestInfo();
+begin
+  SetLength(FRequestInfoList, 0);
+end;
+
+procedure jModalDialog.AddRequestInfo(Hint: string; InputType: TInputTypeEx);
+var
+  idx: integer;
+begin
+  idx:= Length(FRequestInfoList);
+  SetLength(FRequestInfoList, idx + 1);
+  FRequestInfoList[idx].Hint:= Hint;
+  FRequestInfoList[idx].InputType:= InputType;
 end;
 
 {-------- jModalDialog_JNI_Bridge ----------}
@@ -399,28 +427,33 @@ env^.DeleteLocalRef(env,jParams[0].l);
 end;
 
 
-procedure jModalDialog_InputForActivityResult(env: PJNIEnv; _jmodaldialog: JObject; _packageName: string; var _requestInfo: TDynArrayOfString);
+procedure jModalDialog_InputForActivityResult(env: PJNIEnv; _jmodaldialog: JObject; _packageName: string; var _requestInfo: TRequestInfoList);
 var
-  jParams: array[0..1] of jValue;
+  jParams: array[0..2] of jValue;
   jMethod: jMethodID=nil;
   jCls: jClass=nil;
   newSize0: integer;
   jNewArray0: jObject=nil;
+  jNewArray1: jObject=nil;
   i: integer;
 begin
   jParams[0].l:= env^.NewStringUTF(env, PChar(_packageName));
   newSize0:= Length(_requestInfo);
   jNewArray0:= env^.NewObjectArray(env, newSize0, env^.FindClass(env,'java/lang/String'),env^.NewStringUTF(env, PChar('')));
+  jNewArray1:= env^.NewObjectArray(env, newSize0, env^.FindClass(env,'java/lang/String'),env^.NewStringUTF(env, PChar('')));
   for i:= 0 to newSize0 - 1 do
   begin
-     env^.SetObjectArrayElement(env,jNewArray0,i,env^.NewStringUTF(env, PChar(_requestInfo[i])));
+     env^.SetObjectArrayElement(env,jNewArray0,i,env^.NewStringUTF(env, PChar(_requestInfo[i].Hint)));
+     env^.SetObjectArrayElement(env,jNewArray1,i,env^.NewStringUTF(env, PChar(InputTypeToStrEx(_requestInfo[i].InputType))));
   end;
   jParams[1].l:= jNewArray0;
+  jParams[2].l:= jNewArray1;
   jCls:= env^.GetObjectClass(env, _jmodaldialog);
-  jMethod:= env^.GetMethodID(env, jCls, 'InputForActivityResult', '(Ljava/lang/String;[Ljava/lang/String;)V');
+  jMethod:= env^.GetMethodID(env, jCls, 'InputForActivityResult', '(Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;)V');
   env^.CallVoidMethodA(env, _jmodaldialog, jMethod, @jParams);
   env^.DeleteLocalRef(env,jParams[0].l);
   env^.DeleteLocalRef(env,jParams[1].l);
+  env^.DeleteLocalRef(env,jParams[2].l);
   env^.DeleteLocalRef(env, jCls);
 end;
 

@@ -237,7 +237,13 @@ public class jEditText extends EditText {
 			else
 				this.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
 		}
-
+        else if (str.equals("DATE")) {
+                this.setInputType(android.text.InputType.TYPE_CLASS_DATETIME | 
+                                           android.text.InputType.TYPE_DATETIME_VARIATION_DATE);
+        } else if (str.equals("DATETIME")) {
+                this.setInputType(android.text.InputType.TYPE_CLASS_DATETIME | 
+                                   android.text.InputType.TYPE_DATETIME_VARIATION_NORMAL); 
+        }
 		else {this.setInputType(android.text.InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);};
 
 	}

@@ -494,7 +494,9 @@ type
                     itxPhone,
                     itxNumberPassword,
                     itxTextPassword,
-                    itxMultiLine);
+                    itxMultiLine,
+                    itxDate,
+                    itxDateTime);
 
   //by jmpessoa
   //http://www.semurjengkol.com/android-relative-layout-example/#sthash.JdHGbyti.dpuf
@@ -5287,6 +5289,8 @@ Function InputTypeToStrEx ( InputType : TInputTypeEx ) : String;
    itxNumberPassword : Result := 'PASSNUMBER';
    itxTextPassword   : Result := 'PASSTEXT';
    itxMultiLine  : Result := 'TEXTMULTILINE';
+   itxDate       : Result := 'DATE';
+   itxDateTime   : Result := 'DATETIME';
   end;
  end;
 

@@ -12,7 +12,9 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-
+import java.util.Calendar;
+import android.app.DatePickerDialog;
+import android.widget.DatePicker;
 
 /*Draft java code by "Lazarus Android Module Wizard" [5/15/2017 22:57:41]*/
 /*https://github.com/jmpessoa/lazandroidmodulewizard*/
@@ -37,7 +39,8 @@ public class jModalDialog extends Activity {
 	int mHasWindowTitle = 0; 
 	int mDlgType = 0;
 	
-	String[] mRequestInfo;	
+	String[] mRequestInfoHint;	
+    String[] mRequestInfoInputType;
 	EditText[] mEditInput;  
 	
 	int mRequestInfoCount = 0;
@@ -68,7 +71,30 @@ public class jModalDialog extends Activity {
       //free local objects...
       mI = null;
     }
+    
+    public void OpenDatePicker(int idx, int year, int month, int day) {
+        DatePickerDialog.OnDateSetListener listener = new DatePickerDialog.OnDateSetListener() {
+            private int annonidx;
+            private DatePickerDialog.OnDateSetListener init(int idx) {
+                annonidx = idx;
+                return this;
+            }
+            @Override
+            public void onDateSet(DatePicker view, int year, int monthOfYear,int dayOfMonth) {
+                monthOfYear += 1;
+                String date = new String(dayOfMonth+"/"+monthOfYear+"/"+year);
+                mEditInput[annonidx].setText(date);
+            }
+        }.init(idx);
 
+        DatePickerDialog dialog=new DatePickerDialog(this, listener, year, month, day);
+        dialog.show();
+    }
+    
+    public void OpenDateTimePicker(int idx, int year, int month, int day) {
+        OpenDatePicker(idx, year, month, day);
+        
+    }
     
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -94,9 +120,11 @@ public class jModalDialog extends Activity {
         mRequestInfoCount = intent.getIntExtra("dlg_request_info_count", 0); 
        
         if (mRequestInfoCount > 0) { 
-           mRequestInfo = new String[mRequestInfoCount];        
+           mRequestInfoHint = new String[mRequestInfoCount];        
+           mRequestInfoInputType = new String[mRequestInfoCount];
            for (int i = 0; i < mRequestInfoCount;  i++) {        	           	  
-        	  mRequestInfo[i] = intent.getStringExtra(String.valueOf(i));  //get "0", "1", "2", ...
+        	  mRequestInfoHint[i] = intent.getStringExtra(String.valueOf(i));  //get "0", "1", "2", ...
+              mRequestInfoInputType[i] = intent.getStringExtra("dlg_input_type" + String.valueOf(i));
            }                                        
         }
         
@@ -119,7 +147,7 @@ public class jModalDialog extends Activity {
         this.setFinishOnTouchOutside(false);  // modal dialog
         
     }
-       
+    
     @Override
     public void onContentChanged() {    	
         
@@ -148,39 +176,85 @@ public class jModalDialog extends Activity {
      	   mEditInput = new EditText[mRequestInfoCount]; //all edit inputs ...
      	   
      	   //Log.i("mRequestInfoCount", "count = "+ mRequestInfoCount);
-     	  
-     	   if (mRequestInfoCount > 0) {
-     		   
-     	     mEditInput[0] = new EditText(this);        	  
-     	     mEditInput[0].setId(2222);
-     	     mEditInput[0].setPadding(20, 30, 20, 30);      
-     	     //mEditInput[0].setText();     	     
-     	     mEditInput[0].setHint(mHint);// +" "+ mRequestInfo[0].toLowerCase());
-     	     
-     	   
-             android.widget.RelativeLayout.LayoutParams lparams0 = new android.widget.RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT,
-     		                                                        RelativeLayout.LayoutParams.WRAP_CONTENT);     // W,H                
-             lparams0.addRule(RelativeLayout.CENTER_HORIZONTAL);      //parent       
-             lparams0.addRule(RelativeLayout.BELOW, title.getId());   //anchor        
-             mEditInput[0].setLayoutParams(lparams0);                
-             mLayout.addView(mEditInput[0]);
-             
-             mIndexAnchor = 0;
-             
-     	   }
-     	   
-           for (int j = 1;  j < mRequestInfoCount; j++) { //others inputs...
-        	           	  
-        	  mEditInput[j] = new EditText(this);        	  
+    	   
+           for (int j = 0;  j < mRequestInfoCount; j++) { //others inputs...
+        	  mEditInput[j] = new EditText(this);
         	  mEditInput[j].setId(2222+j);
         	  mEditInput[j].setPadding(20, 30, 20, 30);      
         	  //mEditInput[j].setText(mRequestInfo[j]);
-        	  mEditInput[j].setHint(mHint);// +" "+ mRequestInfo[j].toLowerCase());
+        	  mEditInput[j].setHint(mRequestInfoHint[j]);
+              
+              // Set input type
+              String str = new String(mRequestInfoInputType[j]);
+              if(str.equals("NUMBER")) {
+                mEditInput[j].setInputType(android.text.InputType.TYPE_CLASS_NUMBER | 
+                                           android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL | 
+                                           android.text.InputType.TYPE_NUMBER_FLAG_SIGNED);
+              } else if(str.equals("CURRENCY")) {
+                mEditInput[j].setInputType(android.text.InputType.TYPE_CLASS_NUMBER | 
+                                           android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL | 
+                                           android.text.InputType.TYPE_NUMBER_FLAG_SIGNED);
+              } else if (str.equals("CAPCHARACTERS")) {
+                mEditInput[j].setInputType(android.text.InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS);
+              } else if (str.equals("TEXT")) {
+                mEditInput[j].setInputType(android.text.InputType.TYPE_CLASS_TEXT);
+              } else if (str.equals("PHONE")) {
+                mEditInput[j].setInputType(android.text.InputType.TYPE_CLASS_PHONE); 
+              } else if (str.equals("PASSNUMBER")) {
+                mEditInput[j].setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+                mEditInput[j].setTransformationMethod(android.text.method.PasswordTransformationMethod.getInstance()); 
+              } else if (str.equals("PASSTEXT")) {
+                mEditInput[j].setInputType(android.text.InputType.TYPE_CLASS_TEXT | 
+                                           android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+                mEditInput[j].setTransformationMethod(android.text.method.PasswordTransformationMethod.getInstance()); 
+              } else if (str.equals("TEXTMULTILINE")) {
+                mEditInput[j].setInputType(android.text.InputType.TYPE_CLASS_TEXT | 
+                                           android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+              } else if (str.equals("DATE")) {
+                mEditInput[j].setInputType(android.text.InputType.TYPE_NULL); // disable soft input
+                mEditInput[j].setFocusable(false);
+                mEditInput[j].setKeyListener(null);
+                mEditInput[j].setOnClickListener(new View.OnClickListener() {
+                    private int annonIdx;
+                    private View.OnClickListener init(int idx) {
+                        annonIdx = idx;
+                        return this;
+                    }
+                    @Override
+                    public void onClick(View v) {
+                        final Calendar c = Calendar.getInstance(java.util.Locale.getDefault());
+                        OpenDatePicker(annonIdx, c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH));
+                    };
+                }.init(j));
+              } else if (str.equals("DATETIME")) {
+                mEditInput[j].setInputType(android.text.InputType.TYPE_NULL); // disable soft input
+                mEditInput[j].setFocusable(false);
+                mEditInput[j].setKeyListener(null);
+                mEditInput[j].setOnClickListener(new View.OnClickListener() {
+                    private int annonIdx;
+                    private View.OnClickListener init(int idx) {
+                        annonIdx = idx;
+                        return this;
+                    }
+                    @Override
+                    public void onClick(View v) {
+                        final Calendar c = Calendar.getInstance(java.util.Locale.getDefault());
+                        OpenDatePicker(annonIdx, c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH));
+                    };
+                }.init(j));
+              } else {
+                mEditInput[j].setInputType(android.text.InputType.TYPE_CLASS_TEXT | 
+                                           android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS );
+              };
         	  
               android.widget.RelativeLayout.LayoutParams lparamsEdit = new android.widget.RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT,
         		                                                        RelativeLayout.LayoutParams.WRAP_CONTENT);     // W,H                
-              lparamsEdit.addRule(RelativeLayout.CENTER_HORIZONTAL);      //parent       
-              lparamsEdit.addRule(RelativeLayout.BELOW, mEditInput[j-1].getId());   //anchor        
+              lparamsEdit.addRule(RelativeLayout.CENTER_HORIZONTAL);      //parent 
+              if (j == 0) {
+                lparamsEdit.addRule(RelativeLayout.BELOW, title.getId());   //anchor
+              } else {
+                lparamsEdit.addRule(RelativeLayout.BELOW, mEditInput[j-1].getId());   //anchor        
+              }
               mEditInput[j].setLayoutParams(lparamsEdit);                
               mLayout.addView(mEditInput[j]);
               
@@ -229,7 +303,7 @@ public class jModalDialog extends Activity {
                if  (mDlgType == 0) {   //inputBox
                  intent.putExtra("REQUESTED_INFO_COUNT",  mRequestInfoCount);            	   
             	 for (int k=0; k < mRequestInfoCount; k++) {            		             		             				 
-                     intent.putExtra(mRequestInfo[k], mEditInput[k].getText().toString());
+                     intent.putExtra(mRequestInfoHint[k], mEditInput[k].getText().toString());
             	 }            	             	 
                }
                  
@@ -306,12 +380,12 @@ public class jModalDialog extends Activity {
     }
     
     
-    public void SetRequestInfo(String[] _requestInfo) {
-    	int count = _requestInfo.length;
+    public void SetRequestInfo(String[] _requestInfoHint) {
+    	int count = _requestInfoHint.length;
     	
-    	mRequestInfo = new String[count];    	
+    	mRequestInfoHint = new String[count];    	
     	for(int i = 0; i < count; i++) {
-    		 mRequestInfo[i] = _requestInfo[i];    		
+    		 mRequestInfoHint[i] = _requestInfoHint[i];
     	}
     	
     }
@@ -363,7 +437,7 @@ public class jModalDialog extends Activity {
      	}    	 
     }    
     
-    public void InputForActivityResult(String _packageName, String[] _requestInfo) {
+    public void InputForActivityResult(String _packageName, String[] _requestInfoHint, String[] _inputType) {
     	    	
     	int count;
     	
@@ -386,12 +460,13 @@ public class jModalDialog extends Activity {
            mI.putExtra("dlg_font_title_size", mTitleFontSize);
            mI.putExtra("dlg_inptu_hint", mHint);
            
-           count = _requestInfo.length;
+           count = _requestInfoHint.length;
                       
            mI.putExtra("dlg_request_info_count", count);           
            
        	   for(int i = 0; i < count; i++) {    		
-   		      mI.putExtra(String.valueOf(i), _requestInfo[i]);   		      
+   		      mI.putExtra(String.valueOf(i), _requestInfoHint[i]);
+              mI.putExtra("dlg_input_type" + String.valueOf(i), _inputType[i]);
    	       }
        	   
            controls.activity.startActivityForResult(mI, mRequestCode);
