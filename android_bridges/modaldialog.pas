@@ -60,7 +60,6 @@ jModalDialog = class(jControl)
 
     procedure ClearRequestInfo();
     procedure AddRequestInfo(_hint: string; _text: string=''; _inputType: TInputTypeEx=itxText);
-    procedure AddRequestInfoNumber(_hint: string; _text: string='');
     procedure AddRequestInfoDate(_hint: string; _text: string=''; _format: string='dd/MM/yyyy');
     procedure AddRequestInfoTime(_hint: string; _text: string=''; _format: string='HH:mm');
 
@@ -271,11 +270,6 @@ begin
   else if _inputType = itxTime then FRequestInfoList[idx].Format:= 'HH:mm'
   else FRequestInfoList[idx].Format:= '';
   FRequestInfoList[idx].InputType:= _inputType;
-end;
-
-procedure AddRequestInfoNumber(_hint: string; _text: string='');
-begin
-  AddRequestInfo(_hint, _text, itxNumber);
 end;
 
 procedure jModalDialog.AddRequestInfoDate(_hint: string; _text: string=''; _format: string='dd/MM/yyyy');
