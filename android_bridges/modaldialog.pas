@@ -16,7 +16,9 @@ TDialogTheme = (thHoloLightDialog, thHoloDialog, thDialog);
 
 type
     TRequestInfo = Record
+      Text: string;
       Hint: string;
+      Format: string;
       InputType: TInputTypeEx;
 	 end;
     TRequestInfoList = array of TRequestInfo;
@@ -57,7 +59,10 @@ jModalDialog = class(jControl)
     procedure SetInputHint(_hint: string);
 
     procedure ClearRequestInfo();
-    procedure AddRequestInfo(Hint: string; InputType: TInputTypeEx);
+    procedure AddRequestInfo(_hint: string; _text: string=''; _inputType: TInputTypeEx=itxText);
+    procedure AddRequestInfoNumber(_hint: string; _text: string='');
+    procedure AddRequestInfoDate(_hint: string; _text: string=''; _format: string='dd/MM/yyyy');
+    procedure AddRequestInfoTime(_hint: string; _text: string=''; _format: string='HH:mm');
 
  published
     property Theme: TDialogTheme read  FTheme write SetTheme;
@@ -254,14 +259,47 @@ begin
   SetLength(FRequestInfoList, 0);
 end;
 
-procedure jModalDialog.AddRequestInfo(Hint: string; InputType: TInputTypeEx);
+procedure jModalDialog.AddRequestInfo(_hint: string; _text: string=''; _inputType: TInputTypeEx=itxText);
 var
   idx: integer;
 begin
   idx:= Length(FRequestInfoList);
   SetLength(FRequestInfoList, idx + 1);
-  FRequestInfoList[idx].Hint:= Hint;
-  FRequestInfoList[idx].InputType:= InputType;
+  FRequestInfoList[idx].Text:= _text;
+  FRequestInfoList[idx].Hint:= _hint;
+  if _inputType = itxDate then FRequestInfoList[idx].Format:= 'dd/MM/yyyy'
+  else if _inputType = itxTime then FRequestInfoList[idx].Format:= 'HH:mm'
+  else FRequestInfoList[idx].Format:= '';
+  FRequestInfoList[idx].InputType:= _inputType;
+end;
+
+procedure AddRequestInfoNumber(_hint: string; _text: string='');
+begin
+  AddRequestInfo(_hint, _text, itxNumber);
+end;
+
+procedure jModalDialog.AddRequestInfoDate(_hint: string; _text: string=''; _format: string='dd/MM/yyyy');
+var
+  idx: integer;
+begin
+    idx:= Length(FRequestInfoList);
+    SetLength(FRequestInfoList, idx + 1);
+    FRequestInfoList[idx].Text:= _text;
+    FRequestInfoList[idx].Hint:= _hint;
+    FRequestInfoList[idx].Format:= _format;
+    FRequestInfoList[idx].InputType:= itxDate;
+end;
+
+procedure jModalDialog.AddRequestInfoTime(_hint: string; _text: string=''; _format: string='HH:mm');
+var
+  idx: integer;
+begin
+    idx:= Length(FRequestInfoList);
+    SetLength(FRequestInfoList, idx + 1);
+    FRequestInfoList[idx].Text:= _text;
+    FRequestInfoList[idx].Hint:= _hint;
+    FRequestInfoList[idx].Format:= _format;
+    FRequestInfoList[idx].InputType:= itxTime;
 end;
 
 {-------- jModalDialog_JNI_Bridge ----------}
@@ -429,31 +467,36 @@ end;
 
 procedure jModalDialog_InputForActivityResult(env: PJNIEnv; _jmodaldialog: JObject; _packageName: string; var _requestInfo: TRequestInfoList);
 var
-  jParams: array[0..2] of jValue;
+  jParams: array[0..4] of jValue;
   jMethod: jMethodID=nil;
   jCls: jClass=nil;
   newSize0: integer;
-  jNewArray0: jObject=nil;
-  jNewArray1: jObject=nil;
+  jNewArray: array[0..3] of jObject;
   i: integer;
 begin
   jParams[0].l:= env^.NewStringUTF(env, PChar(_packageName));
   newSize0:= Length(_requestInfo);
-  jNewArray0:= env^.NewObjectArray(env, newSize0, env^.FindClass(env,'java/lang/String'),env^.NewStringUTF(env, PChar('')));
-  jNewArray1:= env^.NewObjectArray(env, newSize0, env^.FindClass(env,'java/lang/String'),env^.NewStringUTF(env, PChar('')));
-  for i:= 0 to newSize0 - 1 do
-  begin
-     env^.SetObjectArrayElement(env,jNewArray0,i,env^.NewStringUTF(env, PChar(_requestInfo[i].Hint)));
-     env^.SetObjectArrayElement(env,jNewArray1,i,env^.NewStringUTF(env, PChar(InputTypeToStrEx(_requestInfo[i].InputType))));
+  jNewArray[0]:= env^.NewObjectArray(env, newSize0, env^.FindClass(env,'java/lang/String'),env^.NewStringUTF(env, PChar('')));
+  jNewArray[1]:= env^.NewObjectArray(env, newSize0, env^.FindClass(env,'java/lang/String'),env^.NewStringUTF(env, PChar('')));
+  jNewArray[2]:= env^.NewObjectArray(env, newSize0, env^.FindClass(env,'java/lang/String'),env^.NewStringUTF(env, PChar('')));
+  jNewArray[3]:= env^.NewObjectArray(env, newSize0, env^.FindClass(env,'java/lang/String'),env^.NewStringUTF(env, PChar('')));
+
+  for i:= 0 to newSize0 - 1 do begin
+     env^.SetObjectArrayElement(env,jNewArray[0],i,env^.NewStringUTF(env, PChar(_requestInfo[i].Hint)));
+     env^.SetObjectArrayElement(env,jNewArray[1],i,env^.NewStringUTF(env, PChar(_requestInfo[i].Text)));
+     env^.SetObjectArrayElement(env,jNewArray[2],i,env^.NewStringUTF(env, PChar(_requestInfo[i].Format)));
+     env^.SetObjectArrayElement(env,jNewArray[3],i,env^.NewStringUTF(env, PChar(InputTypeToStrEx(_requestInfo[i].InputType))));
   end;
-  jParams[1].l:= jNewArray0;
-  jParams[2].l:= jNewArray1;
+
+  for i:=1 to Length(jParams) - 1 do begin
+  jParams[i].l:= jNewArray[i-1];
+  end;
   jCls:= env^.GetObjectClass(env, _jmodaldialog);
-  jMethod:= env^.GetMethodID(env, jCls, 'InputForActivityResult', '(Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;)V');
+  jMethod:= env^.GetMethodID(env, jCls, 'InputForActivityResult', '(Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;)V');
   env^.CallVoidMethodA(env, _jmodaldialog, jMethod, @jParams);
-  env^.DeleteLocalRef(env,jParams[0].l);
-  env^.DeleteLocalRef(env,jParams[1].l);
-  env^.DeleteLocalRef(env,jParams[2].l);
+  for i:=0 to Length(jParams) - 1 do begin
+     env^.DeleteLocalRef(env,jParams[i].l);
+  end;
   env^.DeleteLocalRef(env, jCls);
 end;
 

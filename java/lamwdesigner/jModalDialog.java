@@ -12,9 +12,12 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-import java.util.Calendar;
 import android.app.DatePickerDialog;
 import android.widget.DatePicker;
+import android.widget.TimePicker;
+import android.app.TimePickerDialog;
+import java.util.Calendar;
+import java.text.SimpleDateFormat;
 
 /*Draft java code by "Lazarus Android Module Wizard" [5/15/2017 22:57:41]*/
 /*https://github.com/jmpessoa/lazandroidmodulewizard*/
@@ -39,9 +42,11 @@ public class jModalDialog extends Activity {
 	int mHasWindowTitle = 0; 
 	int mDlgType = 0;
 	
-	String[] mRequestInfoHint;	
+    String[] mRequestInfoHint;
+    String[] mRequestInfoText;
+	String[] mRequestInfoFormat;
     String[] mRequestInfoInputType;
-	EditText[] mEditInput;  
+	EditText[] mEditInput;
 	
 	int mRequestInfoCount = 0;
 	
@@ -81,9 +86,11 @@ public class jModalDialog extends Activity {
             }
             @Override
             public void onDateSet(DatePicker view, int year, int monthOfYear,int dayOfMonth) {
-                monthOfYear += 1;
-                String date = new String(dayOfMonth+"/"+monthOfYear+"/"+year);
-                mEditInput[annonidx].setText(date);
+                Calendar cal = Calendar.getInstance();
+                cal.setTimeInMillis(0);
+                cal.set(year, monthOfYear, dayOfMonth, 0, 0, 0);
+                SimpleDateFormat sdf = new SimpleDateFormat(mRequestInfoFormat[annonidx]);
+                mEditInput[annonidx].setText(sdf.format(cal.getTime()));
             }
         }.init(idx);
 
@@ -91,9 +98,25 @@ public class jModalDialog extends Activity {
         dialog.show();
     }
     
-    public void OpenDateTimePicker(int idx, int year, int month, int day) {
-        OpenDatePicker(idx, year, month, day);
-        
+    public void OpenTimePicker(int idx, int hour, int min, int sec) {
+        TimePickerDialog.OnTimeSetListener listener = new TimePickerDialog.OnTimeSetListener() {
+            private int annonidx;
+            private TimePickerDialog.OnTimeSetListener init(int idx) {
+                annonidx = idx;
+                return this;
+            }
+            @Override
+            public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
+                Calendar cal = Calendar.getInstance();
+                cal.setTimeInMillis(0);
+                cal.set(0, 0, 0, hourOfDay, minute, 0);
+                SimpleDateFormat sdf = new SimpleDateFormat(mRequestInfoFormat[annonidx]);
+                mEditInput[annonidx].setText(sdf.format(cal.getTime()));
+            }
+        }.init(idx);
+
+        TimePickerDialog dialog = new TimePickerDialog(this, listener, hour, min, true);
+        dialog.show();
     }
     
     @Override
@@ -120,12 +143,16 @@ public class jModalDialog extends Activity {
         mRequestInfoCount = intent.getIntExtra("dlg_request_info_count", 0); 
        
         if (mRequestInfoCount > 0) { 
-           mRequestInfoHint = new String[mRequestInfoCount];        
+           mRequestInfoHint = new String[mRequestInfoCount];
+           mRequestInfoText = new String[mRequestInfoCount];
+           mRequestInfoFormat = new String[mRequestInfoCount];
            mRequestInfoInputType = new String[mRequestInfoCount];
            for (int i = 0; i < mRequestInfoCount;  i++) {        	           	  
-        	  mRequestInfoHint[i] = intent.getStringExtra(String.valueOf(i));  //get "0", "1", "2", ...
-              mRequestInfoInputType[i] = intent.getStringExtra("dlg_input_type" + String.valueOf(i));
-           }                                        
+              mRequestInfoHint[i] = intent.getStringExtra("dlg_ih" + String.valueOf(i));
+              mRequestInfoText[i] = intent.getStringExtra("dlg_it" + String.valueOf(i));
+              mRequestInfoFormat[i] = intent.getStringExtra("dlg_if" + String.valueOf(i));
+              mRequestInfoInputType[i] = intent.getStringExtra("dlg_iit" + String.valueOf(i));
+           }
         }
         
         mLayout = new android.widget.RelativeLayout(this);
@@ -181,7 +208,7 @@ public class jModalDialog extends Activity {
         	  mEditInput[j] = new EditText(this);
         	  mEditInput[j].setId(2222+j);
         	  mEditInput[j].setPadding(20, 30, 20, 30);      
-        	  //mEditInput[j].setText(mRequestInfo[j]);
+        	  mEditInput[j].setText(mRequestInfoText[j]);
         	  mEditInput[j].setHint(mRequestInfoHint[j]);
               
               // Set input type
@@ -222,11 +249,14 @@ public class jModalDialog extends Activity {
                     }
                     @Override
                     public void onClick(View v) {
-                        final Calendar c = Calendar.getInstance(java.util.Locale.getDefault());
-                        OpenDatePicker(annonIdx, c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH));
+                        final Calendar cal = Calendar.getInstance(java.util.Locale.getDefault());
+                        int year = cal.get(java.util.Calendar.YEAR);
+                        int month = cal.get(java.util.Calendar.MONTH);
+                        int day = cal.get(java.util.Calendar.DAY_OF_MONTH);
+                        OpenDatePicker(annonIdx, year, month, day);
                     };
                 }.init(j));
-              } else if (str.equals("DATETIME")) {
+              } else if (str.equals("TIME")) {
                 mEditInput[j].setInputType(android.text.InputType.TYPE_NULL); // disable soft input
                 mEditInput[j].setFocusable(false);
                 mEditInput[j].setKeyListener(null);
@@ -238,8 +268,7 @@ public class jModalDialog extends Activity {
                     }
                     @Override
                     public void onClick(View v) {
-                        final Calendar c = Calendar.getInstance(java.util.Locale.getDefault());
-                        OpenDatePicker(annonIdx, c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH));
+                        OpenTimePicker(annonIdx, 0, 0, 0);
                     };
                 }.init(j));
               } else {
@@ -437,7 +466,7 @@ public class jModalDialog extends Activity {
      	}    	 
     }    
     
-    public void InputForActivityResult(String _packageName, String[] _requestInfoHint, String[] _inputType) {
+    public void InputForActivityResult(String _packageName, String[] _requestInfoHint, String[] _requestInfoText, String[] _requestInfoFormat, String[] _inputType) {
     	    	
     	int count;
     	
@@ -465,8 +494,10 @@ public class jModalDialog extends Activity {
            mI.putExtra("dlg_request_info_count", count);           
            
        	   for(int i = 0; i < count; i++) {    		
-   		      mI.putExtra(String.valueOf(i), _requestInfoHint[i]);
-              mI.putExtra("dlg_input_type" + String.valueOf(i), _inputType[i]);
+   		      mI.putExtra("dlg_ih" + String.valueOf(i), _requestInfoHint[i]);
+              mI.putExtra("dlg_it" + String.valueOf(i), _requestInfoText[i]);
+              mI.putExtra("dlg_if" + String.valueOf(i), _requestInfoFormat[i]);
+              mI.putExtra("dlg_iit" + String.valueOf(i), _inputType[i]);
    	       }
        	   
            controls.activity.startActivityForResult(mI, mRequestCode);

@@ -240,7 +240,7 @@ public class jEditText extends EditText {
         else if (str.equals("DATE")) {
                 this.setInputType(android.text.InputType.TYPE_CLASS_DATETIME | 
                                            android.text.InputType.TYPE_DATETIME_VARIATION_DATE);
-        } else if (str.equals("DATETIME")) {
+        } else if (str.equals("TIME")) {
                 this.setInputType(android.text.InputType.TYPE_CLASS_DATETIME | 
                                    android.text.InputType.TYPE_DATETIME_VARIATION_NORMAL); 
         }
