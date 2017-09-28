@@ -33,6 +33,7 @@ jModalDialog = class(jControl)
     FTitle: string;
     FTitleFontSize: integer;
     FRequestInfoList: TRequestInfoList;
+    FQuery: string;
 
  public
     constructor Create(AOwner: TComponent); override;
@@ -43,6 +44,7 @@ jModalDialog = class(jControl)
 
     procedure SetRequestCode(_requestCode: integer);
     procedure SetDialogTitle(_dialogTitle: string);
+    procedure SetDialogQuery(_dialogQuery: string);
     procedure ShowMessage(_packageName: string);
     procedure InputForActivityResult(_packageName: string);
     procedure QuestionForActivityResult(_packageName: string);
@@ -69,6 +71,7 @@ jModalDialog = class(jControl)
     property CaptionCancel: string read FCaptionCancel write SetCaptionButtonCancel;
     property Title: string read FTitle write SetDialogTitle;
     property TitleFontSize: integer read FTitleFontSize write SetTitleFontSize;
+    property Query: string read FQuery write SetDialogQuery;
 end;
 
 function jModalDialog_jCreate(env: PJNIEnv;_Self: int64; this: jObject): jObject;
@@ -76,6 +79,7 @@ procedure jModalDialog_jFree(env: PJNIEnv; _jmodaldialog: JObject);
 
 procedure jModalDialog_SetRequestCode(env: PJNIEnv; _jmodaldialog: JObject; _requestCode: integer);
 procedure jModalDialog_SetDialogTitle(env: PJNIEnv; _jmodaldialog: JObject; _dialogTitle: string);
+procedure jModalDialog_SetDialogQuery(env: PJNIEnv; _jmodaldialog: JObject; _dialogQuery: string);
 procedure jModalDialog_ShowMessage(env: PJNIEnv; _jmodaldialog: JObject; _packageName: string);
 procedure jModalDialog_QuestionForActivityResult(env: PJNIEnv; _jmodaldialog: JObject; _packageName: string);
 procedure jModalDialog_InputForActivityResult(env: PJNIEnv; _jmodaldialog: JObject; _packageName: string; var _requestInfo: TRequestInfoList);
@@ -170,6 +174,14 @@ begin
   FTitle:= _dialogTitle;
   if FInitialized then
      jModalDialog_SetDialogTitle(FjEnv, FjObject, _dialogTitle);
+end;
+
+procedure jModalDialog.SetDialogQuery(_dialogQuery: string);
+begin
+  //in designing component state: set value here...
+  FQuery:= _dialogQuery;
+  if FInitialized then
+     jModalDialog_SetDialogQuery(FjEnv, FjObject, _dialogQuery);
 end;
 
 procedure jModalDialog.ShowMessage(_packageName: string);
@@ -439,10 +451,23 @@ begin
   jCls:= env^.GetObjectClass(env, _jmodaldialog);
   jMethod:= env^.GetMethodID(env, jCls, 'SetDialogTitle', '(Ljava/lang/String;)V');
   env^.CallVoidMethodA(env, _jmodaldialog, jMethod, @jParams);
-env^.DeleteLocalRef(env,jParams[0].l);
+  env^.DeleteLocalRef(env,jParams[0].l);
   env^.DeleteLocalRef(env, jCls);
 end;
 
+procedure jModalDialog_SetDialogQuery(env: PJNIEnv; _jmodaldialog: JObject; _dialogQuery: string);
+var
+  jParams: array[0..0] of jValue;
+  jMethod: jMethodID=nil;
+  jCls: jClass=nil;
+begin
+  jParams[0].l:= env^.NewStringUTF(env, PChar(_dialogQuery));
+  jCls:= env^.GetObjectClass(env, _jmodaldialog);
+  jMethod:= env^.GetMethodID(env, jCls, 'SetDialogQuery', '(Ljava/lang/String;)V');
+  env^.CallVoidMethodA(env, _jmodaldialog, jMethod, @jParams);
+  env^.DeleteLocalRef(env,jParams[0].l);
+  env^.DeleteLocalRef(env, jCls);
+end;
 
 procedure jModalDialog_ShowMessage(env: PJNIEnv; _jmodaldialog: JObject; _packageName: string);
 var

@@ -36,7 +36,7 @@ public class jModalDialog extends Activity {
 	int lpH = RelativeLayout.LayoutParams.WRAP_CONTENT;
 	int lpW = RelativeLayout.LayoutParams.MATCH_PARENT; //w
 		
-	public String mTitle;	
+	public String mTitle;
 	public int mDlgTheme = android.R.style.Theme_Holo_Light_Dialog;
 	
 	int mHasWindowTitle = 0; 
@@ -52,6 +52,7 @@ public class jModalDialog extends Activity {
 	
 	int mRequestCode = 1122;
 	String mDialogTitle = "LAMW Modal Dialog Title";
+    String mDialogQuery = "";
 	
 	int mIndexAnchor;
 	
@@ -131,14 +132,15 @@ public class jModalDialog extends Activity {
         
         mHasWindowTitle = intent.getIntExtra("dlg_has_window_title", 0);        
         mTitle = intent.getStringExtra("dlg_title");  //_dialogTitle
+        mDialogQuery = intent.getStringExtra("dlg_query");  //_dialogQuery
         mBtnOK =  intent.getStringExtra("dlg_btn_ok"); 
         mBtnCancel = intent.getStringExtra("dlg_btn_cancel"); 
         mTitleFontSize = intent.getIntExtra("dlg_font_title_size", 0);        
         mHint = intent.getStringExtra("dlg_inptu_hint");        
         mDlgType = intent.getIntExtra("dlg_type", 0); 
                         
-        if (mHasWindowTitle == 1)            	
-        	  requestWindowFeature(Window.FEATURE_NO_TITLE);  
+        if (mHasWindowTitle == 1) requestWindowFeature(Window.FEATURE_NO_TITLE);
+        else this.setTitle(mTitle);
            	    	        
         mRequestInfoCount = intent.getIntExtra("dlg_request_info_count", 0); 
        
@@ -180,23 +182,24 @@ public class jModalDialog extends Activity {
         
     	int screenWidth;
     	
-        TextView title = new TextView(this);
+        TextView textquery = new TextView(this);
         
-        title.setId(1111);
-        title.setPadding(20, 20, 20, 20);
-        title.setText(mTitle);
+        textquery.setId(1111);
+        textquery.setText(mDialogQuery);
+        if (!mDialogQuery.equals("")) {
+            textquery.setPadding(20, 20, 20, 20);
+            if (mTitleFontSize > 0)
+                textquery.setTextSize(mTitleFontSize);
         
-        if (mTitleFontSize > 0)
-           title.setTextSize(mTitleFontSize);
+            android.widget.RelativeLayout.LayoutParams lparamstxt = new android.widget.RelativeLayout.LayoutParams(
+            RelativeLayout.LayoutParams.WRAP_CONTENT,RelativeLayout.LayoutParams.WRAP_CONTENT);     // W,H
         
-        android.widget.RelativeLayout.LayoutParams lparamstxt = new android.widget.RelativeLayout.LayoutParams(
-        		RelativeLayout.LayoutParams.WRAP_CONTENT,RelativeLayout.LayoutParams.WRAP_CONTENT);     // W,H
-        
-        lparamstxt.addRule(RelativeLayout.CENTER_HORIZONTAL);
-        lparamstxt.addRule(RelativeLayout.ALIGN_TOP);        
-        title.setLayoutParams(lparamstxt);
-            	    	   
-        mLayout.addView(title, lparamstxt);
+            lparamstxt.addRule(RelativeLayout.CENTER_HORIZONTAL);
+            lparamstxt.addRule(RelativeLayout.ALIGN_TOP);        
+            textquery.setLayoutParams(lparamstxt);
+                               
+            mLayout.addView(textquery, lparamstxt);
+        }
      
         if (mDlgType == 0) {  //inputBox
      	   
@@ -280,7 +283,7 @@ public class jModalDialog extends Activity {
         		                                                        RelativeLayout.LayoutParams.WRAP_CONTENT);     // W,H                
               lparamsEdit.addRule(RelativeLayout.CENTER_HORIZONTAL);      //parent 
               if (j == 0) {
-                lparamsEdit.addRule(RelativeLayout.BELOW, title.getId());   //anchor
+                lparamsEdit.addRule(RelativeLayout.BELOW, textquery.getId());   //anchor
               } else {
                 lparamsEdit.addRule(RelativeLayout.BELOW, mEditInput[j-1].getId());   //anchor        
               }
@@ -310,7 +313,7 @@ public class jModalDialog extends Activity {
 
         if  (mDlgType > 0) {  //showmessage
         	
-        	lparamsOk.addRule(RelativeLayout.BELOW, title.getId());   //anchor
+        	lparamsOk.addRule(RelativeLayout.BELOW, textquery.getId());   //anchor
         	
         	if (mDlgType == 1) 
         	  lparamsOk.addRule(RelativeLayout.CENTER_HORIZONTAL); //parent
@@ -363,7 +366,7 @@ public class jModalDialog extends Activity {
              lparamsCancel.addRule(RelativeLayout.BELOW, mEditInput[mIndexAnchor].getId());      //anchor
           
           if (mDlgType == 2)  //dlgQuestion
-        	  lparamsCancel.addRule(RelativeLayout.BELOW, title.getId());   //anchor
+        	  lparamsCancel.addRule(RelativeLayout.BELOW, textquery.getId());   //anchor
           
           lparamsCancel.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);                //parent       
         
@@ -444,6 +447,10 @@ public class jModalDialog extends Activity {
     	 mDialogTitle = _dialogTitle;
     }
     
+    public void SetDialogQuery(String _dialogQuery) {
+    	 mDialogQuery = _dialogQuery;
+    }
+    
     //dlgShowMessage
     public void ShowMessage(String _packageName) {
      	Class<?> cls = GetClass(_packageName+"."+"jModalDialog");  //_javaClassName    	
@@ -479,7 +486,8 @@ public class jModalDialog extends Activity {
            
            mDlgType = 0; // force dlgInputBox
            
-           mI.putExtra("dlg_title", mDialogTitle);           
+           mI.putExtra("dlg_title", mDialogTitle);
+           mI.putExtra("dlg_query", mDialogQuery); 
            mI.putExtra("dlg_type", mDlgType);
            mI.putExtra("dlg_theme", mDlgTheme);
            mI.putExtra("dlg_has_window_title", mHasWindowTitle);
